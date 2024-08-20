@@ -1,0 +1,5 @@
+endpoints:
+  - name: Google
+    url: https://google.com/
+    interval: 10
+    percent_diff_limit: 4.0
