@@ -31,7 +31,7 @@ def log(msg: str, is_error: bool = False):
   else:
     print(msg)
 
-def check_endpoint(state: EndpointState):
+def check_endpoint(state: EndpointState, attempt: int = 0):
   try:
     res = requests.get(state.configuration.url)
     if state.previous_status_code is None:
@@ -51,6 +51,15 @@ def check_endpoint(state: EndpointState):
         log(error_message, True)
         state.previous_body = res.text
       return
+  except requests.ReadTimeout as e:
+    if attempt < 1:
+      return check_endpoint(state, attempt + 1)
+    if state.previous_status_code != -1:
+      error_message = "{}: Endpoint no longer available: {}".format(state.configuration.name, type(e).__name__)
+      log(error_message, True)
+      state.previous_status_code = -1
+      state.previous_body = ""
+    return
   except Exception as e:
     if state.previous_status_code != -1:
       error_message = "{}: Endpoint no longer available: {}".format(state.configuration.name, type(e).__name__)
