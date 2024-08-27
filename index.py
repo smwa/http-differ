@@ -59,6 +59,11 @@ def check_endpoint(state: EndpointState, attempt: int = 0):
       time.sleep(1)
       return check_endpoint(state, attempt + 1)
     if state.previous_status_code != -1:
+      exc_type, exc_value, exc_traceback = sys.exc_info()
+      lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+      emsg = '\n'.join(lines)
+      log(emsg)
+
       error_message = "{}: Endpoint no longer available: {}".format(state.configuration.name, type(e).__name__)
       log(error_message, True)
       state.previous_status_code = -1
