@@ -2,6 +2,8 @@ import sys
 import time
 import argparse
 from typing import List
+import sys
+import traceback
 
 import requests
 import yaml
@@ -52,7 +54,9 @@ def check_endpoint(state: EndpointState, attempt: int = 0):
         state.previous_body = res.text
       return
   except requests.ReadTimeout as e:
-    if attempt < 1:
+    if attempt < 3:
+      log("{}: Retrying due to readtimeout".format(state.configuration.name))
+      time.sleep(1)
       return check_endpoint(state, attempt + 1)
     if state.previous_status_code != -1:
       error_message = "{}: Endpoint no longer available: {}".format(state.configuration.name, type(e).__name__)
@@ -61,6 +65,11 @@ def check_endpoint(state: EndpointState, attempt: int = 0):
       state.previous_body = ""
     return
   except Exception as e:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+    emsg = '\n'.join(lines)
+    log(emsg)
+
     if state.previous_status_code != -1:
       error_message = "{}: Endpoint no longer available: {}".format(state.configuration.name, type(e).__name__)
       log(error_message, True)
